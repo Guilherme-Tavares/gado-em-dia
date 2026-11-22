@@ -1,0 +1,42 @@
+@if (Visivel)
+{
+    <div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header border-0 pb-0">
+                    <h2 class="modal-title h5">
+                        <i class="bi bi-exclamation-triangle text-danger me-2" aria-hidden="true"></i>@Titulo
+                    </h2>
+                    <button type="button" class="btn-close" aria-label="Fechar" @onclick="OnCancelar"></button>
+                </div>
+                <div class="modal-body">
+                    @ChildContent
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light" @onclick="OnCancelar">Cancelar</button>
+                    <button type="button" class="btn btn-danger" @onclick="OnConfirmar">
+                        <i class="bi bi-trash me-1" aria-hidden="true"></i>Excluir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop show"></div>
+}
+
+@code {
+    [Parameter]
+    public bool Visivel { get; set; }
+
+    [Parameter]
+    public string Titulo { get; set; } = "Confirmar exclusão";
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public EventCallback OnConfirmar { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancelar { get; set; }
+}

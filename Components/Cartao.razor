@@ -1,0 +1,28 @@
+<div class="card mb-4">
+    @if (!string.IsNullOrEmpty(Titulo))
+    {
+        <div class="card-header bg-transparent border-0 pt-3 pb-0">
+            <h2 class="h6 fw-semibold mb-0">
+                @if (!string.IsNullOrEmpty(Icone))
+                {
+                    <i class="bi bi-@Icone text-success me-2" aria-hidden="true"></i>
+                }
+                @Titulo
+            </h2>
+        </div>
+    }
+    <div class="card-body">
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string? Titulo { get; set; }
+
+    [Parameter]
+    public string? Icone { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

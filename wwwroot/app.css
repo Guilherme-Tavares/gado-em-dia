@@ -1,27 +1,108 @@
-html, body {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+:root {
+    --gd-verde: #2f7d4f;
+    --gd-verde-hover: #276a43;
+    --gd-verde-escuro: #1f5c39;
+    --gd-verde-claro: #e8f3ec;
+    --gd-fundo: #f4f6f3;
+    --bs-link-color: var(--gd-verde);
+    --bs-link-color-rgb: 47, 125, 79;
+    --bs-link-hover-color: var(--gd-verde-escuro);
+    --bs-link-hover-color-rgb: 31, 92, 57;
 }
 
-a, .btn-link {
-    color: #006bb7;
+html, body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+body {
+    background-color: var(--gd-fundo);
+    color: #24302a;
 }
 
 .btn-primary {
-    color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
+    --bs-btn-bg: var(--gd-verde);
+    --bs-btn-border-color: var(--gd-verde);
+    --bs-btn-hover-bg: var(--gd-verde-hover);
+    --bs-btn-hover-border-color: var(--gd-verde-hover);
+    --bs-btn-active-bg: var(--gd-verde-escuro);
+    --bs-btn-active-border-color: var(--gd-verde-escuro);
+    --bs-btn-disabled-bg: var(--gd-verde);
+    --bs-btn-disabled-border-color: var(--gd-verde);
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+.btn-outline-primary {
+    --bs-btn-color: var(--gd-verde);
+    --bs-btn-border-color: var(--gd-verde);
+    --bs-btn-hover-bg: var(--gd-verde);
+    --bs-btn-hover-border-color: var(--gd-verde);
+    --bs-btn-active-bg: var(--gd-verde-escuro);
+    --bs-btn-active-border-color: var(--gd-verde-escuro);
 }
 
-.content {
-    padding-top: 1.1rem;
+.btn:focus-visible, .form-control:focus, .form-select:focus, .form-check-input:focus {
+    border-color: var(--gd-verde);
+    box-shadow: 0 0 0 0.2rem rgba(47, 125, 79, 0.25);
+}
+
+.form-check-input:checked {
+    background-color: var(--gd-verde);
+    border-color: var(--gd-verde);
 }
 
 h1:focus {
     outline: none;
+}
+
+.cabecalho-pagina {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+    .cabecalho-pagina h1 {
+        font-size: 1.75rem;
+        font-weight: 600;
+        margin-bottom: 0.15rem;
+    }
+
+.card {
+    border: 0;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 2px rgba(16, 40, 24, 0.06), 0 2px 8px rgba(16, 40, 24, 0.05);
+}
+
+.table-responsive {
+    position: relative;
+}
+
+.table {
+    --bs-table-bg: transparent;
+    margin-bottom: 0;
+}
+
+    .table > thead th {
+        color: #6c757d;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        border-bottom-width: 1px;
+    }
+
+.dados dt {
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.dados dd {
+    margin-bottom: 0.75rem;
+}
+
+.form-label {
+    font-weight: 500;
 }
 
 .valid.modified:not([type=checkbox]) {
@@ -33,7 +114,9 @@ h1:focus {
 }
 
 .validation-message {
-    color: #e50000;
+    color: #c62828;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
 }
 
 .blazor-error-boundary {
@@ -43,7 +126,7 @@ h1:focus {
 }
 
     .blazor-error-boundary::after {
-        content: "An error has occurred."
+        content: "Ocorreu um erro."
     }
 
 .darker-border-checkbox.form-check-input {

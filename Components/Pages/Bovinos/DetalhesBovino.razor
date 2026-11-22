@@ -1,0 +1,124 @@
+@page "/bovinos/{Id:int}"
+@inject IDbContextFactory<GadoContext> DbFactory
+
+<PageTitle>@(bovino?.Identificacao ?? "Bovino") | Gado em Dia</PageTitle>
+
+@if (naoEncontrado)
+{
+    <RegistroNaoEncontrado Mensagem="Bovino não encontrado." VoltarUrl="bovinos" />
+}
+else if (bovino is null)
+{
+    <p class="text-muted">Carregando...</p>
+}
+else
+{
+    <div class="cabecalho-pagina">
+        <div>
+            <h1>@bovino.Identificacao</h1>
+            <p class="text-muted mb-0">
+                @bovino.Sexo?.ObterNome()
+                @if (bovino.Categoria is not null)
+                {
+                    <span> · @bovino.Categoria.Value.ObterNome()</span>
+                }
+                <span class="badge rounded-pill ms-1 @ClasseSituacao(bovino.Situacao)">@bovino.Situacao.ObterNome()</span>
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="bovinos" class="btn btn-light">
+                <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Voltar
+            </a>
+            <a href="bovinos/editar/@bovino.Id" class="btn btn-primary">
+                <i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar
+            </a>
+        </div>
+    </div>
+
+    <Cartao Titulo="Dados do animal" Icone="tags">
+        <dl class="row dados mb-0">
+            <dt class="col-sm-4 col-lg-3">Identificação</dt>
+            <dd class="col-sm-8 col-lg-9">@bovino.Identificacao</dd>
+
+            <dt class="col-sm-4 col-lg-3">Sexo</dt>
+            <dd class="col-sm-8 col-lg-9">@bovino.Sexo?.ObterNome()</dd>
+
+            <dt class="col-sm-4 col-lg-3">Categoria</dt>
+            <dd class="col-sm-8 col-lg-9">@(bovino.Categoria?.ObterNome() ?? "Não informada")</dd>
+
+            <dt class="col-sm-4 col-lg-3">Raça</dt>
+            <dd class="col-sm-8 col-lg-9">@(bovino.Raca ?? "Não informada")</dd>
+
+            <dt class="col-sm-4 col-lg-3">Nascimento</dt>
+            <dd class="col-sm-8 col-lg-9">
+                @if (bovino.DataNascimento is DateTime nascimento)
+                {
+                    @nascimento.ToString("dd/MM/yyyy") <span class="text-muted">(@Idade(nascimento))</span>
+                }
+                else
+                {
+                    <span>Não informado</span>
+                }
+            </dd>
+
+            <dt class="col-sm-4 col-lg-3">Peso</dt>
+            <dd class="col-sm-8 col-lg-9">@(bovino.PesoKg is decimal peso ? $"{peso:0.##} kg" : "Não informado")</dd>
+
+            <dt class="col-sm-4 col-lg-3">Situação</dt>
+            <dd class="col-sm-8 col-lg-9">@bovino.Situacao.ObterNome()</dd>
+
+            <dt class="col-sm-4 col-lg-3">Observações</dt>
+            <dd class="col-sm-8 col-lg-9 mb-0">@(bovino.Observacoes ?? "Nenhuma")</dd>
+        </dl>
+    </Cartao>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Bovino? bovino;
+    private bool naoEncontrado;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        bovino = await db.Bovinos.AsNoTracking().FirstOrDefaultAsync(b => b.Id == Id);
+        naoEncontrado = bovino is null;
+    }
+
+    private static string Idade(DateTime nascimento)
+    {
+        var hoje = DateTime.Today;
+        int meses = (hoje.Year - nascimento.Year) * 12 + hoje.Month - nascimento.Month;
+        if (hoje.Day < nascimento.Day)
+        {
+            meses--;
+        }
+
+        int anos = meses / 12;
+        meses %= 12;
+
+        string textoAnos = anos == 1 ? "1 ano" : $"{anos} anos";
+        string textoMeses = meses == 1 ? "1 mês" : $"{meses} meses";
+
+        if (anos == 0 && meses == 0)
+        {
+            return "menos de 1 mês";
+        }
+
+        if (anos == 0)
+        {
+            return textoMeses;
+        }
+
+        return meses == 0 ? textoAnos : $"{textoAnos} e {textoMeses}";
+    }
+
+    private static string ClasseSituacao(SituacaoBovino situacao) => situacao switch
+    {
+        SituacaoBovino.Ativo => "text-bg-success",
+        SituacaoBovino.Vendido => "text-bg-secondary",
+        _ => "text-bg-dark"
+    };
+}

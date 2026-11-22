@@ -15,25 +15,25 @@ O prazo é 01/12 às 00:00. O dia 30/11 fica de folga para imprevistos.
 
 ## Etapa 1: Guilherme
 
-- [ ] Modelos e enums (SPEC, seção 3)
-- [ ] `GadoContext` com a configuração do `OnModelCreating`
-- [ ] Pacotes do EF Core, `AddDbContextFactory`, string de conexão no `appsettings.json` e `dotnet user-secrets init`
-- [ ] Migration `CriarTabelas`
-- [ ] NavMenu com Início, Bovinos, Produtos, Aplicadores e Aplicações, sem Counter e Weather
-- [ ] `_Imports.razor`, Bootstrap Icons e base visual no `app.css`
-- [ ] Componentes `Cartao`, `AvisoVazio`, `BotoesAcoes` e `ConfirmarExclusao`
-- [ ] Bovinos: lista, cadastro/edição e visualização (ainda sem o histórico)
+- [x] Modelos e enums (SPEC, seção 3)
+- [x] `GadoContext` com a configuração do `OnModelCreating`
+- [x] Pacotes do EF Core, `AddDbContextFactory`, string de conexão no `appsettings.json` e `dotnet user-secrets init`
+- [x] Migration `CriarTabelas`
+- [x] NavMenu com Início, Bovinos, Produtos, Aplicadores e Aplicações, sem Counter e Weather
+- [x] `_Imports.razor`, Bootstrap Icons e base visual no `app.css`
+- [x] Componentes `Cartao`, `AvisoVazio`, `BotoesAcoes` e `ConfirmarExclusao`, mais o `RegistroNaoEncontrado`
+- [x] Bovinos: lista, cadastro/edição e visualização (ainda sem o histórico), com exclusão bloqueada para bovino com histórico
 
 **Ao terminar:** dá para cadastrar, ver, editar e excluir bovinos.
 
 ## Etapa 2: Welliton
 
-- [ ] Produtos: lista, cadastro/edição e visualização
+- [ ] Produtos: lista, cadastro/edição e visualização, seguindo o modelo da pasta `Components/Pages/Bovinos/`
 - [ ] Aplicadores: lista, cadastro/edição e visualização
 - [ ] Componente `TabelaAplicacoes`
 - [ ] Aplicações: lista, nova aplicação em lote, edição e visualização
 - [ ] Histórico de aplicações nas visualizações de bovino, produto e aplicador
-- [ ] Exclusão bloqueada para bovino, produto e aplicador com histórico
+- [ ] Exclusão bloqueada para produto e aplicador com histórico (a de bovino já está pronta)
 
 **Ao terminar:** o sistema inteiro funciona, só sem o dashboard e os alertas.
 

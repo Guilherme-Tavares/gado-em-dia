@@ -67,7 +67,7 @@ Os nomes no código não têm acento, seguindo o padrão das atividades. As opç
 | `Raca` | string? | Opcional; até 50 caracteres (ex.: "Nelore", "Mestiço") |
 | `DataNascimento` | DateTime? (só a data) | Opcional; não pode ser futura |
 | `PesoKg` | decimal? | Opcional; de 1 a 1500; `decimal(6,2)`. Último peso conhecido, útil para calcular doses por peso vivo |
-| `Situacao` | enum `Situacao` | Obrigatório; padrão `Ativo` |
+| `Situacao` | enum `SituacaoBovino` | Obrigatório; padrão `Ativo` |
 | `Observacoes` | string? | Opcional; até 250 caracteres (pelagem, marcas, características) |
 | `Aplicacoes` | `List<Aplicacao>` | Navegação |
 
@@ -123,7 +123,7 @@ Ficam gravados como inteiros. Nas telas, aparecem com acento por meio de `[Displ
 |---|---|
 | `Sexo` | Macho, Fêmea |
 | `Categoria` | Bezerro(a), Garrote, Novilha, Vaca, Boi, Touro |
-| `Situacao` | Ativo, Vendido, Morto |
+| `SituacaoBovino` | Ativo, Vendido, Morto |
 | `TipoProduto` | Vacina, Vermífugo, Antibiótico, Anti-inflamatório, Carrapaticida, Outro |
 | `Funcao` | Proprietário, Funcionário, Veterinário, Outro |
 
@@ -145,9 +145,10 @@ São as que contam para o critério de "regra além de campo obrigatório".
 - `[StringLength]` nos textos e `[Range]` no peso, na dose, no intervalo de reforço e na carência.
 - `[RegularExpression]` no CRMV, que aceita o campo vazio.
 - `[Phone]` e `[EmailAddress]` no aplicador.
+- `[DataNaoFutura]`, um atributo de validação próprio (`Models/DataNaoFuturaAttribute.cs`), na data de nascimento e na data da aplicação.
 - Feitas na página antes de salvar, com a mensagem exibida no formulário:
   - identificação repetida;
-  - data futura ou anterior ao nascimento;
+  - data da aplicação anterior ao nascimento do bovino;
   - aplicação sem nenhum produto marcado;
   - aplicação sem nenhum animal marcado.
 
@@ -247,14 +248,15 @@ Ficam na pasta `Components`. Nenhum deles acessa o banco: recebem dados por par�
 
 | Componente | Técnica | Onde é reutilizado |
 |---|---|---|
-| `Cartao` | `ChildContent` + `[Parameter] Titulo` | Moldura dos formulários e das telas de visualização |
+| `Cartao` | `ChildContent` + `[Parameter]` Titulo e Icone | Moldura dos formulários, das listas e das telas de visualização |
+| `RegistroNaoEncontrado` | `[Parameter]` Mensagem e VoltarUrl | Telas de visualização e edição quando o Id não existe |
 | `CartaoResumo` | `[Parameter]` Titulo, Valor, Icone, Link e Destaque | 4 vezes no dashboard |
 | `AvisoVazio` | `[Parameter] Mensagem` | Todas as listas e históricos vazios |
 | `BotoesAcoes` | `[Parameter]` VisualizarUrl e EditarUrl + `EventCallback OnExcluir` | Cada linha das quatro listas |
 | `ConfirmarExclusao` | `ChildContent` (texto do aviso) + `[Parameter] Visivel` + `EventCallback` OnConfirmar e OnCancelar | As quatro listas |
 | `TabelaAplicacoes` | `[Parameter] List<Aplicacao>` | `/aplicacoes`, dashboard e visualização de bovino, produto e aplicador |
 | `TabelaReforcos` | `[Parameter] List<Reforco>` | Dashboard e visualização de bovino |
-| `SeloSituacao` | `[Parameter] Situacao` (Em dia, Vence em breve, Atrasado, Em carência) | `TabelaReforcos`, lista de bovinos e visualização de bovino |
+| `SeloSituacao` | `[Parameter] Situacao`, de um enum novo `SituacaoSanitariaItem` (Em dia, Vence em breve, Atrasado, Em carência), para não confundir com `SituacaoBovino` | `TabelaReforcos`, lista de bovinos e visualização de bovino |
 
 Com isso, as três técnicas aparecem em mais de um componente e todos são reutilizados.
 
@@ -313,7 +315,15 @@ Os cálculos consideram só os **bovinos ativos**, e "hoje" é a data atual.
 - **Selects:** `InputSelect` com `int` começando em 0 e opção "Selecione...". Os campos de Id usam `[Range(1, int.MaxValue)]` para exigir a escolha.
 - **Enums:** `InputSelect` funciona direto com enum. Para os campos opcionais (`Categoria?`), usar uma opção vazia.
 - **Exclusão bloqueada:** verificar antes com `AnyAsync` e mostrar a mensagem na tela, sugerindo mudar a situação no caso de bovinos.
-- **Registro inexistente:** nas telas de visualização e edição, se o Id não existir, mostrar "Registro não encontrado" com um link de volta para a lista.
+- **Registro inexistente:** nas telas de visualização e edição, se o Id não existir, usar o componente `RegistroNaoEncontrado`.
+- **Organização do projeto:**
+  - `Models/`: entidades, enums, `EnumExtensions` (`ObterNome()`, que mostra o nome com acento do `[Display]`) e `DataNaoFuturaAttribute`.
+  - `Data/`: `GadoContext`.
+  - `Components/`: componentes reutilizáveis.
+  - `Components/Pages/<Área>/`: três páginas por área, com os nomes `Lista<Área>`, `Form<Entidade>` e `Detalhes<Entidade>`. A pasta `Bovinos/` é o modelo a seguir.
+  - `Components/Pages/_Imports.razor`: traz os `@using` do EF Core e do `GadoContext` só para as páginas. Assim os componentes nem enxergam o banco.
+- **Padrão das páginas:** `@inject IDbContextFactory<GadoContext> DbFactory` e, em cada operação, `await using var db = await DbFactory.CreateDbContextAsync();`.
+- **Cultura pt-BR:** configurada no `Program.cs`. Datas e números já aparecem no formato brasileiro.
 - **Migrations:** uma migration inicial com todas as tabelas (ex.: `CriarTabelas`). Mudanças posteriores no modelo viram novas migrations.
 
 ## 8. Extras, se sobrar tempo

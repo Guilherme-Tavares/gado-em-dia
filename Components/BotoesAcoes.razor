@@ -1,0 +1,23 @@
+<div class="d-flex gap-1 justify-content-end">
+    <a href="@VisualizarUrl" class="btn btn-sm btn-outline-secondary" title="Visualizar" aria-label="Visualizar">
+        <i class="bi bi-eye" aria-hidden="true"></i>
+    </a>
+    <a href="@EditarUrl" class="btn btn-sm btn-outline-primary" title="Editar" aria-label="Editar">
+        <i class="bi bi-pencil" aria-hidden="true"></i>
+    </a>
+    <button type="button" class="btn btn-sm btn-outline-danger" title="Excluir" aria-label="Excluir"
+            @onclick="OnExcluir">
+        <i class="bi bi-trash" aria-hidden="true"></i>
+    </button>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string VisualizarUrl { get; set; } = "";
+
+    [Parameter, EditorRequired]
+    public string EditarUrl { get; set; } = "";
+
+    [Parameter]
+    public EventCallback OnExcluir { get; set; }
+}
