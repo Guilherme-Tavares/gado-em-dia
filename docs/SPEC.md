@@ -2,7 +2,7 @@
 
 Sistema web para registrar o manejo sanitário de um rebanho de gado de corte: quais animais receberam vacinas, vermífugos ou outros medicamentos, quando, em que dose e por quem.
 
-Trabalho final de Linguagem de Programação Visual II. Entrega e apresentação até **01/12/2026**.
+Trabalho final de Linguagem de Programação Visual II. Entrega e apresentação até **01/12/2026**. A divisão do trabalho entre os integrantes está em [DIVISAO.md](DIVISAO.md).
 
 ## 1. Problema e usuário
 
@@ -359,6 +359,4 @@ São inseridos pelas telas durante a apresentação. Os nomes são fictícios, e
 
 ### Trechos para cada integrante explicar
 
-1. **Banco:** modelos, `GadoContext`, relação N:N com a tabela intermediária e a dose, migration e `AddDbContextFactory`.
-2. **Componentes e dashboard:** `Cartao`, `BotoesAcoes`, `ConfirmarExclusao`, `CartaoResumo` e `TabelaReforcos`, com `ChildContent`, `[Parameter]` e `EventCallback`, e os cálculos da `SituacaoSanitaria`.
-3. **Páginas e formulários:** tela de aplicação em lote com `EditForm`, validações, `InputSelect` e caixas de marcação, e as telas com parâmetro na rota (`/bovinos/{Id}`).
+Cada um explica um trecho do que construiu. A lista de quem explica o quê está em [DIVISAO.md](DIVISAO.md#apresentação).
