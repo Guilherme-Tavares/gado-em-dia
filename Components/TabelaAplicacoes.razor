@@ -1,0 +1,60 @@
+@if (!Aplicacoes.Any())
+{
+    <AvisoVazio Mensagem="Nenhuma aplicação registrada." />
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Bovino</th>
+                    <th>Aplicador</th>
+                    <th>Produtos</th>
+                    <th><span class="visually-hidden">Detalhes</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var aplicacao in Aplicacoes.OrderByDescending(a => a.Data))
+                {
+                    <tr>
+                        <td>@aplicacao.Data.ToString("dd/MM/yyyy")</td>
+                        <td>@aplicacao.Bovino?.Identificacao</td>
+                        <td>@aplicacao.Aplicador?.Nome</td>
+                        <td>@string.Join(", ", aplicacao.Itens.Select(i => i.Produto?.Nome))</td>
+                        <td>
+                            <a class="btn btn-sm btn-outline-secondary"
+                               href="aplicacoes/@aplicacao.Id"
+                               aria-label="Visualizar aplicação">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            @if (OnExcluir.HasDelegate)
+                            {
+                                <a class="btn btn-sm btn-outline-primary ms-1"
+                                   href="aplicacoes/editar/@aplicacao.Id"
+                                   aria-label="Editar aplicação">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-danger ms-1"
+                                        @onclick="() => OnExcluir.InvokeAsync(aplicacao)"
+                                        aria-label="Excluir aplicação">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public List<Aplicacao> Aplicacoes { get; set; } = [];
+
+    [Parameter]
+    public EventCallback<Aplicacao> OnExcluir { get; set; }
+}

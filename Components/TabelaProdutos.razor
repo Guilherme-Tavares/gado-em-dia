@@ -1,0 +1,32 @@
+@if (!Produtos.Any())
+{
+    <AvisoVazio Mensagem="Nenhum produto cadastrado." />
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead><tr><th>Nome</th><th>Tipo</th><th>Unidade</th><th>Reforço</th><th>Carência</th><th><span class="visually-hidden">Ações</span></th></tr></thead>
+            <tbody>
+                @foreach (var produto in Produtos)
+                {
+                    <tr>
+                        <td class="fw-semibold"><a href="produtos/@produto.Id" class="text-reset text-decoration-none">@produto.Nome</a></td>
+                        <td>@produto.Tipo.ObterNome()</td><td>@produto.Unidade</td>
+                        <td>@(produto.IntervaloReforcoDias == 0 ? "Sem reforço" : $"{produto.IntervaloReforcoDias} dias")</td>
+                        <td>@produto.CarenciaDias dias</td>
+                        <td><BotoesAcoes VisualizarUrl="@($"produtos/{produto.Id}")" EditarUrl="@($"produtos/editar/{produto.Id}")" OnExcluir="() => OnExcluir.InvokeAsync(produto)" /></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public List<Produto> Produtos { get; set; } = [];
+
+    [Parameter]
+    public EventCallback<Produto> OnExcluir { get; set; }
+}

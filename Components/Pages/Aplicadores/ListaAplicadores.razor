@@ -1,0 +1,81 @@
+@page "/aplicadores"
+@inject IDbContextFactory<GadoContext> DbFactory
+
+<PageTitle>Aplicadores | Gado em Dia</PageTitle>
+
+<div class="cabecalho-pagina">
+    <div>
+        <h1>Aplicadores</h1>
+        <p class="text-muted mb-0">Proprietários, funcionários e veterinários</p>
+    </div>
+    <a href="aplicadores/novo" class="btn btn-primary">Novo aplicador</a>
+</div>
+
+@if (mensagemErro is not null)
+{
+    <div class="alert alert-warning">@mensagemErro</div>
+}
+
+<Cartao>
+    @if (aplicadores is null)
+    {
+        <p class="text-muted">Carregando...</p>
+    }
+    else
+    {
+        <TabelaAplicadores Aplicadores="aplicadores" OnExcluir="PedirExclusao" />
+    }
+</Cartao>
+
+<ConfirmarExclusao Visivel="aplicadorParaExcluir is not null"
+                   OnConfirmar="ExcluirAsync"
+                   OnCancelar="CancelarExclusao">
+    Deseja excluir <strong>@aplicadorParaExcluir?.Nome</strong>?
+</ConfirmarExclusao>
+
+@code {
+    private List<Aplicador>? aplicadores;
+    private Aplicador? aplicadorParaExcluir;
+    private string? mensagemErro;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        aplicadores = await db.Aplicadores.OrderBy(a => a.Nome).ToListAsync();
+    }
+
+    private void PedirExclusao(Aplicador aplicador)
+    {
+        mensagemErro = null;
+        aplicadorParaExcluir = aplicador;
+    }
+
+    private void CancelarExclusao()
+    {
+        aplicadorParaExcluir = null;
+    }
+
+    private async Task ExcluirAsync()
+    {
+        if (aplicadorParaExcluir is null)
+        {
+            return;
+        }
+
+        Aplicador aplicador = aplicadorParaExcluir;
+        aplicadorParaExcluir = null;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        bool temHistorico = await db.Aplicacoes.AnyAsync(a => a.AplicadorId == aplicador.Id);
+
+        if (temHistorico)
+        {
+            mensagemErro = $"O aplicador {aplicador.Nome} possui aplicações registradas e não pode ser excluído.";
+            return;
+        }
+
+        db.Aplicadores.Remove(aplicador);
+        await db.SaveChangesAsync();
+        aplicadores?.Remove(aplicador);
+    }
+}

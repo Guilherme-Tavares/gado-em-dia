@@ -1,0 +1,83 @@
+@page "/produtos"
+@inject IDbContextFactory<GadoContext> DbFactory
+
+<PageTitle>Produtos | Gado em Dia</PageTitle>
+
+<div class="cabecalho-pagina">
+    <div>
+        <h1>Produtos</h1>
+        <p class="text-muted mb-0">Vacinas, vermífugos e medicamentos</p>
+    </div>
+    <a href="produtos/novo" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>Novo produto
+    </a>
+</div>
+
+@if (mensagemErro is not null)
+{
+    <div class="alert alert-warning">@mensagemErro</div>
+}
+
+<Cartao>
+    @if (produtos is null)
+    {
+        <p class="text-muted">Carregando...</p>
+    }
+    else
+    {
+        <TabelaProdutos Produtos="produtos" OnExcluir="PedirExclusao" />
+    }
+</Cartao>
+
+<ConfirmarExclusao Visivel="produtoParaExcluir is not null"
+                   OnConfirmar="ExcluirAsync"
+                   OnCancelar="CancelarExclusao">
+    Deseja excluir <strong>@produtoParaExcluir?.Nome</strong>?
+</ConfirmarExclusao>
+
+@code {
+    private List<Produto>? produtos;
+    private Produto? produtoParaExcluir;
+    private string? mensagemErro;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        produtos = await db.Produtos.OrderBy(p => p.Nome).ToListAsync();
+    }
+
+    private void PedirExclusao(Produto produto)
+    {
+        mensagemErro = null;
+        produtoParaExcluir = produto;
+    }
+
+    private void CancelarExclusao()
+    {
+        produtoParaExcluir = null;
+    }
+
+    private async Task ExcluirAsync()
+    {
+        if (produtoParaExcluir is null)
+        {
+            return;
+        }
+
+        Produto produto = produtoParaExcluir;
+        produtoParaExcluir = null;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        bool temHistorico = await db.Aplicacoes.AnyAsync(a => a.Itens.Any(i => i.ProdutoId == produto.Id));
+
+        if (temHistorico)
+        {
+            mensagemErro = $"O produto {produto.Nome} possui aplicações registradas e não pode ser excluído.";
+            return;
+        }
+
+        db.Produtos.Remove(produto);
+        await db.SaveChangesAsync();
+        produtos?.Remove(produto);
+    }
+}

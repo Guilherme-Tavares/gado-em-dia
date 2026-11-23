@@ -1,0 +1,48 @@
+<EditForm Model="Aplicador" OnValidSubmit="OnSalvar">
+    <DataAnnotationsValidator />
+    <div class="row g-3">
+        <div class="col-md-8">
+            <label class="form-label">Nome *</label>
+            <InputText class="form-control" @bind-Value="Aplicador.Nome" />
+            <ValidationMessage For="() => Aplicador.Nome" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Função *</label>
+            <InputSelect class="form-select" @bind-Value="Aplicador.Funcao">
+                <option value="">Selecione...</option>
+                @foreach (var funcao in Enum.GetValues<Funcao>())
+                {
+                    <option value="@funcao">@funcao.ObterNome()</option>
+                }
+            </InputSelect>
+            <ValidationMessage For="() => Aplicador.Funcao" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">CRMV</label>
+            <InputText class="form-control" @bind-Value="Aplicador.Crmv" placeholder="1234/RO" />
+            <ValidationMessage For="() => Aplicador.Crmv" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Telefone</label>
+            <InputText class="form-control" @bind-Value="Aplicador.Telefone" />
+            <ValidationMessage For="() => Aplicador.Telefone" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">E-mail</label>
+            <InputText class="form-control" @bind-Value="Aplicador.Email" />
+            <ValidationMessage For="() => Aplicador.Email" />
+        </div>
+    </div>
+    <div class="d-flex gap-2 mt-4">
+        <button type="submit" class="btn btn-primary">Salvar</button>
+        <a href="aplicadores" class="btn btn-light">Cancelar</a>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter, EditorRequired]
+    public Aplicador Aplicador { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback OnSalvar { get; set; }
+}

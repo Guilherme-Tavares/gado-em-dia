@@ -1,0 +1,44 @@
+@if (!Aplicadores.Any())
+{
+    <AvisoVazio Mensagem="Nenhum aplicador cadastrado." />
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Função</th>
+                    <th>Telefone</th>
+                    <th><span class="visually-hidden">Ações</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var aplicador in Aplicadores)
+                {
+                    <tr>
+                        <td class="fw-semibold">
+                            <a href="aplicadores/@aplicador.Id" class="text-reset text-decoration-none">@aplicador.Nome</a>
+                        </td>
+                        <td>@aplicador.Funcao?.ObterNome()</td>
+                        <td>@(aplicador.Telefone ?? "—")</td>
+                        <td>
+                            <BotoesAcoes VisualizarUrl="@($"aplicadores/{aplicador.Id}")"
+                                           EditarUrl="@($"aplicadores/editar/{aplicador.Id}")"
+                                           OnExcluir="() => OnExcluir.InvokeAsync(aplicador)" />
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public List<Aplicador> Aplicadores { get; set; } = [];
+
+    [Parameter]
+    public EventCallback<Aplicador> OnExcluir { get; set; }
+}

@@ -1,0 +1,84 @@
+@page "/produtos/novo"
+@page "/produtos/editar/{Id:int}"
+@inject IDbContextFactory<GadoContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>@Titulo | Gado em Dia</PageTitle>
+
+<div class="cabecalho-pagina">
+    <div>
+        <h1>@Titulo</h1>
+        <p class="text-muted mb-0">Informe os dados e os prazos indicados na bula.</p>
+    </div>
+    <a href="produtos" class="btn btn-light">Voltar</a>
+</div>
+
+@if (naoEncontrado)
+{
+    <RegistroNaoEncontrado Mensagem="Produto não encontrado." VoltarUrl="produtos" />
+}
+else if (produto is null)
+{
+    <p class="text-muted">Carregando...</p>
+}
+else
+{
+    <Cartao Titulo="Dados do produto" Icone="capsule">
+        <FormularioProduto Produto="produto" OnSalvar="SalvarAsync" />
+    </Cartao>
+}
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private Produto? produto;
+    private bool naoEncontrado;
+
+    private string Titulo => Id is null ? "Novo produto" : "Editar produto";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id is null)
+        {
+            produto = new Produto();
+            return;
+        }
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        produto = await db.Produtos.AsNoTracking().FirstOrDefaultAsync(p => p.Id == Id);
+        naoEncontrado = produto is null;
+    }
+
+    private async Task SalvarAsync()
+    {
+        if (produto is null)
+        {
+            return;
+        }
+
+        produto.Nome = produto.Nome.Trim();
+        produto.Unidade = produto.Unidade.Trim();
+        produto.Finalidade = Limpar(produto.Finalidade);
+        produto.Fabricante = Limpar(produto.Fabricante);
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        if (produto.Id == 0)
+        {
+            db.Produtos.Add(produto);
+        }
+        else
+        {
+            db.Produtos.Update(produto);
+        }
+
+        await db.SaveChangesAsync();
+        Navigation.NavigateTo($"produtos/{produto.Id}");
+    }
+
+    private static string? Limpar(string? texto)
+    {
+        return string.IsNullOrWhiteSpace(texto) ? null : texto.Trim();
+    }
+}

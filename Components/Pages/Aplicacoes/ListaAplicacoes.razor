@@ -1,0 +1,75 @@
+@page "/aplicacoes"
+@inject IDbContextFactory<GadoContext> DbFactory
+
+<PageTitle>Aplicações | Gado em Dia</PageTitle>
+
+<div class="cabecalho-pagina">
+    <div>
+        <h1>Aplicações</h1>
+        <p class="text-muted mb-0">Histórico de manejos sanitários</p>
+    </div>
+    <a href="aplicacoes/nova" class="btn btn-primary">Nova aplicação</a>
+</div>
+
+<Cartao>
+    @if (aplicacoes is null)
+    {
+        <p class="text-muted">Carregando...</p>
+    }
+    else
+    {
+        <TabelaAplicacoes Aplicacoes="aplicacoes" OnExcluir="PedirExclusao" />
+    }
+</Cartao>
+
+<ConfirmarExclusao Visivel="aplicacaoParaExcluir is not null"
+                   OnConfirmar="ExcluirAsync"
+                   OnCancelar="CancelarExclusao">
+    Deseja excluir esta aplicação? Esta ação não pode ser desfeita.
+</ConfirmarExclusao>
+
+@code {
+    private List<Aplicacao>? aplicacoes;
+    private Aplicacao? aplicacaoParaExcluir;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        aplicacoes = await db.Aplicacoes
+            .Include(a => a.Bovino)
+            .Include(a => a.Aplicador)
+            .Include(a => a.Itens)
+                .ThenInclude(i => i.Produto)
+            .OrderByDescending(a => a.Data)
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
+    private void PedirExclusao(Aplicacao aplicacao)
+    {
+        aplicacaoParaExcluir = aplicacao;
+    }
+
+    private void CancelarExclusao()
+    {
+        aplicacaoParaExcluir = null;
+    }
+
+    private async Task ExcluirAsync()
+    {
+        if (aplicacaoParaExcluir is null)
+        {
+            return;
+        }
+
+        Aplicacao aplicacao = aplicacaoParaExcluir;
+        aplicacaoParaExcluir = null;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        db.Aplicacoes.Remove(new Aplicacao { Id = aplicacao.Id });
+        await db.SaveChangesAsync();
+
+        aplicacoes?.Remove(aplicacao);
+    }
+}

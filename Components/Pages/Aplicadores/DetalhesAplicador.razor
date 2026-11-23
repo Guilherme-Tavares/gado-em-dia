@@ -1,0 +1,67 @@
+@page "/aplicadores/{Id:int}"
+@inject IDbContextFactory<GadoContext> DbFactory
+<PageTitle>@(aplicador?.Nome ?? "Aplicador") | Gado em Dia</PageTitle>
+@if (naoEncontrado)
+{
+    <RegistroNaoEncontrado Mensagem="Aplicador não encontrado." VoltarUrl="aplicadores" />
+}
+else if (aplicador is null)
+{
+
+    <p
+    class="text-muted">Carregando...</p>
+}
+else
+{
+
+    <div class="cabecalho-pagina">
+        <div>
+            <h1>@aplicador.Nome</h1>
+            <p class="text-muted mb-0">@aplicador.Funcao?.ObterNome()</p>
+        </div>
+        <div class="d-flex gap-2"><a href="aplicadores" class="btn btn-light">Voltar</a><a
+            href="aplicadores/editar/@aplicador.Id" class="btn btn-primary">Editar</a></div>
+        </div>
+        <Cartao Titulo="Dados do aplicador" Icone="people">
+            <dl class="row dados mb-0">
+                <dt class="col-sm-4">CRMV</dt>
+                <dd class="col-sm-8">@(aplicador.Crmv ?? "Não informado")</dd>
+                <dt class="col-sm-4">Telefone</dt>
+                <dd class="col-sm-8">@(aplicador.Telefone ?? "Não informado")</dd>
+                <dt class="col-sm-4">E-mail</dt>
+                <dd class="col-sm-8">@(aplicador.Email ?? "Não informado")</dd>
+            </dl>
+        </Cartao>
+        <Cartao Titulo="Histórico de aplicações" Icone="clipboard2-check">
+            @if (!aplicacoes.Any())
+            {
+                <AvisoVazio Mensagem="Nenhuma aplicação registrada." />
+            }
+            else
+            {
+                <ul class="list-group list-group-flush">
+                    @foreach (var aplicacao in aplicacoes)
+                    {
+                        <li class="list-group-item px-0">
+                            <strong>@aplicacao.Data.ToString("dd/MM/yyyy")</strong>
+                            — @aplicacao.Bovino?.Identificacao — @aplicacao.Aplicador?.Nome
+                        </li>
+                    }
+                </ul>
+            }
+        </Cartao>
+    }
+@code {
+    [Parameter] public int Id { get; set; }
+    private Aplicador? aplicador; 
+    private List<Aplicacao> aplicacoes = []; 
+    private bool naoEncontrado; 
+    protected override async Task OnParametersSetAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(); 
+        aplicador = await db.Aplicadores.AsNoTracking().FirstOrDefaultAsync(a => a.Id == Id); 
+        naoEncontrado = aplicador is null; 
+        if (!naoEncontrado) aplicacoes = await
+        db.Aplicacoes.Include(a => a.Bovino).Include(a => a.Aplicador).Include(a => a.Itens).ThenInclude(i => i.Produto).Where(a => a.AplicadorId == Id).OrderByDescending(a => a.Data).AsNoTracking().ToListAsync();
+    }
+}

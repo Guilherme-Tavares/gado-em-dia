@@ -1,0 +1,67 @@
+@page "/aplicacoes/{Id:int}"
+@inject IDbContextFactory<GadoContext> DbFactory
+
+<PageTitle>Aplicação | Gado em Dia</PageTitle>
+
+@if (naoEncontrado)
+{
+    <RegistroNaoEncontrado Mensagem="Aplicação não encontrada." VoltarUrl="aplicacoes" />
+}
+else if (aplicacao is null)
+{
+    <p class="text-muted">Carregando...</p>
+}
+else
+{
+    <div class="cabecalho-pagina">
+        <div>
+            <h1>Aplicação de @aplicacao.Data.ToString("dd/MM/yyyy")</h1>
+            <p class="text-muted mb-0">@aplicacao.Bovino?.Identificacao</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="aplicacoes" class="btn btn-light">Voltar</a>
+            <a href="aplicacoes/editar/@aplicacao.Id" class="btn btn-primary">Editar</a>
+        </div>
+    </div>
+
+    <Cartao Titulo="Dados da aplicação" Icone="clipboard2-check">
+        <dl class="row dados">
+            <dt class="col-sm-4">Animal</dt>
+            <dd class="col-sm-8">@aplicacao.Bovino?.Identificacao</dd>
+            <dt class="col-sm-4">Aplicador</dt>
+            <dd class="col-sm-8">@aplicacao.Aplicador?.Nome</dd>
+            <dt class="col-sm-4">Observação</dt>
+            <dd class="col-sm-8">@(aplicacao.Observacao ?? "Nenhuma")</dd>
+        </dl>
+
+        <h2 class="h6">Produtos aplicados</h2>
+        <ul class="mb-0">
+            @foreach (var item in aplicacao.Itens)
+            {
+                <li>@item.Produto?.Nome — @(item.Dose is decimal dose ? $"{dose:0.##} {item.Produto?.Unidade}" : "dose não informada")</li>
+            }
+        </ul>
+    </Cartao>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Aplicacao? aplicacao;
+    private bool naoEncontrado;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        aplicacao = await db.Aplicacoes
+            .Include(a => a.Bovino)
+            .Include(a => a.Aplicador)
+            .Include(a => a.Itens)
+                .ThenInclude(i => i.Produto)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(a => a.Id == Id);
+
+        naoEncontrado = aplicacao is null;
+    }
+}

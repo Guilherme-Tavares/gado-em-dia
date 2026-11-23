@@ -1,0 +1,226 @@
+@page "/aplicacoes/nova"
+@page "/aplicacoes/editar/{Id:int}"
+@inject IDbContextFactory<GadoContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>@Titulo | Gado em Dia</PageTitle>
+
+<div class="cabecalho-pagina">
+    <div>
+        <h1>@Titulo</h1>
+        <p class="text-muted mb-0">Selecione os animais, o aplicador e os produtos.</p>
+    </div>
+    <a href="aplicacoes" class="btn btn-light">Voltar</a>
+</div>
+
+@if (naoEncontrado)
+{
+    <RegistroNaoEncontrado Mensagem="Aplicação não encontrada." VoltarUrl="aplicacoes" />
+}
+else if (modelo is null)
+{
+    <p class="text-muted">Carregando...</p>
+}
+else
+{
+    <Cartao Titulo="Dados da aplicação" Icone="clipboard2-check">
+        <FormularioAplicacao Aplicacao="modelo"
+                              Bovinos="bovinos"
+                              Aplicadores="aplicadores"
+                              Produtos="produtos"
+                              BovinosSelecionados="bovinosSelecionados"
+                              ProdutosSelecionados="produtosSelecionados"
+                              Doses="doses"
+                              MensagemErro="@erro"
+                              OnSalvar="SalvarAsync"
+                              OnSelecionarBovino="selecao => SelecionarBovino(selecao.Id, selecao.Marcado)"
+                              OnSelecionarProduto="selecao => SelecionarProduto(selecao.Id, selecao.Marcado)"
+                              OnAlterarDose="dose => AlterarDose(dose.Id, dose.Valor)" />
+    </Cartao>
+}
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private Aplicacao? modelo;
+    private List<Bovino> bovinos = [];
+    private List<Aplicador> aplicadores = [];
+    private List<Produto> produtos = [];
+    private HashSet<int> bovinosSelecionados = [];
+    private HashSet<int> produtosSelecionados = [];
+    private Dictionary<int, decimal?> doses = [];
+    private bool naoEncontrado;
+    private string? erro;
+
+    private string Titulo => Id is null ? "Nova aplicação" : "Editar aplicação";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        bovinosSelecionados.Clear();
+        produtosSelecionados.Clear();
+        doses.Clear();
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        bovinos = await db.Bovinos.Where(b => b.Situacao == SituacaoBovino.Ativo).OrderBy(b => b.Identificacao).AsNoTracking().ToListAsync();
+        aplicadores = await db.Aplicadores.OrderBy(a => a.Nome).AsNoTracking().ToListAsync();
+        produtos = await db.Produtos.OrderBy(p => p.Nome).AsNoTracking().ToListAsync();
+
+        if (Id is null)
+        {
+            modelo = new Aplicacao();
+            return;
+        }
+
+        modelo = await db.Aplicacoes.Include(a => a.Itens).AsNoTracking().FirstOrDefaultAsync(a => a.Id == Id);
+        naoEncontrado = modelo is null;
+
+        if (modelo is null)
+        {
+            return;
+        }
+
+        bovinosSelecionados.Add(modelo.BovinoId);
+
+        foreach (var item in modelo.Itens)
+        {
+            produtosSelecionados.Add(item.ProdutoId);
+            doses[item.ProdutoId] = item.Dose;
+        }
+    }
+
+    private void SelecionarBovino(int id, bool marcado)
+    {
+        if (marcado)
+        {
+            if (Id is not null)
+            {
+                bovinosSelecionados.Clear();
+            }
+
+            bovinosSelecionados.Add(id);
+        }
+        else
+        {
+            bovinosSelecionados.Remove(id);
+        }
+
+        if (modelo is not null)
+        {
+            modelo.BovinoId = bovinosSelecionados.FirstOrDefault();
+        }
+    }
+
+    private void SelecionarProduto(int id, bool marcado)
+    {
+        if (marcado)
+        {
+            produtosSelecionados.Add(id);
+            doses.TryAdd(id, null);
+            return;
+        }
+
+        produtosSelecionados.Remove(id);
+        doses.Remove(id);
+    }
+
+    private void AlterarDose(int produtoId, string? valor)
+    {
+        if (string.IsNullOrWhiteSpace(valor))
+        {
+            doses[produtoId] = null;
+            return;
+        }
+
+        if (decimal.TryParse(
+            valor,
+            System.Globalization.NumberStyles.Number,
+            System.Globalization.CultureInfo.InvariantCulture,
+            out decimal dose))
+        {
+            doses[produtoId] = dose;
+        }
+    }
+
+    private async Task SalvarAsync()
+    {
+        if (modelo is null)
+        {
+            return;
+        }
+
+        erro = null;
+
+        if (bovinosSelecionados.Count == 0 || produtosSelecionados.Count == 0)
+        {
+            erro = "Selecione ao menos um animal e um produto.";
+            return;
+        }
+
+        if (doses.Values.Any(dose => dose is not null && (dose < 0.01m || dose > 1000m)))
+        {
+            erro = "A dose deve estar entre 0,01 e 1000.";
+            return;
+        }
+
+        bool nascimentoInvalido = bovinos.Any(b => bovinosSelecionados.Contains(b.Id)
+            && b.DataNascimento is not null
+            && modelo.Data.Date < b.DataNascimento.Value.Date);
+
+        if (nascimentoInvalido)
+        {
+            erro = "A data da aplicação não pode ser anterior ao nascimento do animal.";
+            return;
+        }
+
+        modelo.Observacao = string.IsNullOrWhiteSpace(modelo.Observacao) ? null : modelo.Observacao.Trim();
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        if (modelo.Id == 0)
+        {
+            foreach (int bovinoId in bovinosSelecionados)
+            {
+                var aplicacao = new Aplicacao
+                {
+                    Data = modelo.Data,
+                    AplicadorId = modelo.AplicadorId,
+                    BovinoId = bovinoId,
+                    Observacao = modelo.Observacao
+                };
+
+                foreach (int produtoId in produtosSelecionados)
+                {
+                    aplicacao.Itens.Add(new AplicacaoProduto
+                    {
+                        ProdutoId = produtoId,
+                        Dose = doses.GetValueOrDefault(produtoId)
+                    });
+                }
+
+                db.Aplicacoes.Add(aplicacao);
+            }
+        }
+        else
+        {
+            Aplicacao existente = await db.Aplicacoes.Include(a => a.Itens).FirstAsync(a => a.Id == modelo.Id);
+            existente.Data = modelo.Data;
+            existente.AplicadorId = modelo.AplicadorId;
+            existente.BovinoId = bovinosSelecionados.First();
+            existente.Observacao = modelo.Observacao;
+            existente.Itens.Clear();
+
+            foreach (int produtoId in produtosSelecionados)
+            {
+                existente.Itens.Add(new AplicacaoProduto
+                {
+                    ProdutoId = produtoId,
+                    Dose = doses.GetValueOrDefault(produtoId)
+                });
+            }
+        }
+
+        await db.SaveChangesAsync();
+        Navigation.NavigateTo("aplicacoes");
+    }
+}

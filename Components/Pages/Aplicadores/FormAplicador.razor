@@ -1,0 +1,62 @@
+@page "/aplicadores/novo"
+@page "/aplicadores/editar/{Id:int}"
+@inject IDbContextFactory<GadoContext> DbFactory
+@inject NavigationManager Navigation
+
+@if (naoEncontrado)
+{
+    <RegistroNaoEncontrado Mensagem="Aplicador não encontrado." VoltarUrl="aplicadores" />
+}
+else if (aplicador is null)
+{
+    <p class="text-muted">Carregando...</p>
+}
+else
+{
+    <Cartao Titulo="Dados do aplicador" Icone="people">
+        <FormularioAplicador Aplicador="aplicador" OnSalvar="SalvarAsync" />
+    </Cartao>
+}
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private Aplicador? aplicador;
+    private bool naoEncontrado;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id is null)
+        {
+            aplicador = new Aplicador();
+            return;
+        }
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        aplicador = await db.Aplicadores.AsNoTracking().FirstOrDefaultAsync(a => a.Id == Id);
+        naoEncontrado = aplicador is null;
+    }
+
+    private async Task SalvarAsync()
+    {
+        if (aplicador is null)
+        {
+            return;
+        }
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        if (aplicador.Id == 0)
+        {
+            db.Aplicadores.Add(aplicador);
+        }
+        else
+        {
+            db.Aplicadores.Update(aplicador);
+        }
+
+        await db.SaveChangesAsync();
+        Navigation.NavigateTo($"aplicadores/{aplicador.Id}");
+    }
+}
