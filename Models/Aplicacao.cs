@@ -8,6 +8,7 @@ public class Aplicacao
 
     [Required(ErrorMessage = "Informe a data.")]
     [DataNaoFutura]
+    [DataMinima(1900)]
     public DateTime Data { get; set; } = DateTime.Today;
 
     [Range(1, int.MaxValue, ErrorMessage = "Selecione o animal.")]

@@ -1,4 +1,5 @@
 ﻿@page "/"
+@inject IDbContextFactory<GadoContext> DbFactory
 
 <PageTitle>Gado em Dia</PageTitle>
 
@@ -7,8 +8,135 @@
         <h1>Gado em Dia</h1>
         <p class="text-muted mb-0">Controle sanitário do rebanho: vacinas, vermífugos e medicamentos aplicados em cada animal.</p>
     </div>
+    <a href="aplicacoes/nova" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Nova aplicação
+    </a>
 </div>
 
-<Cartao>
-    <AvisoVazio Mensagem="O painel com o resumo do rebanho entra na Etapa 3." />
-</Cartao>
+@if (carregando)
+{
+    <p class="text-muted">Carregando...</p>
+}
+else
+{
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-sm-6 col-xl-3">
+            <CartaoResumo Titulo="Bovinos ativos" Valor="totalAtivos" Icone="tags" Link="bovinos" />
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <CartaoResumo Titulo="Aplicações no mês" Valor="aplicacoesNoMes" Icone="clipboard2-check" Link="aplicacoes" />
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <CartaoResumo Titulo="Reforços atrasados" Valor="animaisComReforcoAtrasado" Icone="exclamation-triangle"
+                          Link="bovinos" Destaque="animaisComReforcoAtrasado > 0" />
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <CartaoResumo Titulo="Animais em carência" Valor="animaisEmCarencia" Icone="shield-lock" Link="bovinos" />
+        </div>
+    </div>
+
+    <div class="row gx-4">
+        <div class="col-xl-6">
+            <Cartao Titulo="Próximos reforços" Icone="calendar-event">
+                <TabelaReforcos Reforcos="proximosReforcos"
+                                MensagemVazio="Nenhum reforço atrasado ou previsto para os próximos 30 dias." />
+            </Cartao>
+        </div>
+        <div class="col-xl-6">
+            <Cartao Titulo="Últimas aplicações" Icone="clipboard2-pulse">
+                <TabelaAplicacoes Aplicacoes="ultimasAplicacoes" />
+            </Cartao>
+        </div>
+    </div>
+
+    <Cartao Titulo="Rebanho por categoria" Icone="bar-chart">
+        @if (categorias.Count == 0)
+        {
+            <AvisoVazio Mensagem="Nenhum bovino ativo cadastrado." />
+        }
+        else
+        {
+            @foreach (var categoria in categorias)
+            {
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span class="fw-semibold">@categoria.Nome</span>
+                        <span class="text-muted">@categoria.Quantidade (@categoria.Percentual%)</span>
+                    </div>
+                    <div class="progress" role="progressbar" aria-label="@categoria.Nome"
+                         aria-valuenow="@categoria.Percentual" aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-bar" style="width: @(categoria.Percentual)%"></div>
+                    </div>
+                </div>
+            }
+        }
+    </Cartao>
+}
+
+@code {
+    private record ItemCategoria(string Nome, int Quantidade, int Percentual);
+
+    private bool carregando = true;
+    private int totalAtivos;
+    private int aplicacoesNoMes;
+    private int animaisComReforcoAtrasado;
+    private int animaisEmCarencia;
+    private List<Reforco> proximosReforcos = [];
+    private List<Aplicacao> ultimasAplicacoes = [];
+    private List<ItemCategoria> categorias = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        DateTime hoje = DateTime.Today;
+        DateTime inicioMes = new(hoje.Year, hoje.Month, 1);
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        // 1) A página consulta o banco...
+        List<Bovino> ativos = await db.Bovinos
+            .Where(b => b.Situacao == SituacaoBovino.Ativo)
+            .AsNoTracking()
+            .ToListAsync();
+
+        List<Aplicacao> aplicacoesDosAtivos = await db.Aplicacoes
+            .Include(a => a.Bovino)
+            .Include(a => a.Itens)
+                .ThenInclude(i => i.Produto)
+            .Where(a => a.Bovino!.Situacao == SituacaoBovino.Ativo)
+            .AsNoTracking()
+            .ToListAsync();
+
+        aplicacoesNoMes = await db.Aplicacoes
+            .CountAsync(a => a.Data >= inicioMes && a.Data < inicioMes.AddMonths(1));
+
+        ultimasAplicacoes = await db.Aplicacoes
+            .Include(a => a.Bovino)
+            .Include(a => a.Aplicador)
+            .Include(a => a.Itens)
+                .ThenInclude(i => i.Produto)
+            .OrderByDescending(a => a.Data)
+            .ThenByDescending(a => a.Id)
+            .Take(5)
+            .AsNoTracking()
+            .ToListAsync();
+
+        // 2) ...a SituacaoSanitaria calcula (sem acessar o banco)...
+        List<Reforco> reforcos = SituacaoSanitaria.CalcularReforcos(aplicacoesDosAtivos, hoje);
+        Dictionary<int, ResumoSanitario> resumos = SituacaoSanitaria.Resumir(aplicacoesDosAtivos, hoje);
+
+        totalAtivos = ativos.Count;
+        proximosReforcos = SituacaoSanitaria.ProximosReforcos(reforcos);
+        animaisComReforcoAtrasado = SituacaoSanitaria.ContarAnimaisComReforcoAtrasado(reforcos);
+        animaisEmCarencia = resumos.Values.Count(r => r.EmCarencia);
+
+        // 3) ...e os componentes só exibem.
+        categorias = ativos
+            .GroupBy(b => b.Categoria?.ObterNome() ?? "Sem categoria")
+            .OrderByDescending(g => g.Count())
+            .ThenBy(g => g.Key)
+            .Select(g => new ItemCategoria(g.Key, g.Count(), (int)Math.Round(g.Count() * 100.0 / ativos.Count)))
+            .ToList();
+
+        carregando = false;
+    }
+}

@@ -19,6 +19,7 @@ public class Bovino
     public string? Raca { get; set; }
 
     [DataNaoFutura(ErrorMessage = "A data de nascimento não pode ser futura.")]
+    [DataMinima(1900)]
     public DateTime? DataNascimento { get; set; }
 
     [Range(1.0, 1500.0, ErrorMessage = "O peso deve estar entre 1 e 1500 kg.")]

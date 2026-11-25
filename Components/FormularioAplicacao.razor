@@ -25,6 +25,15 @@
     </div>
     <hr />
     <h2 class="h6">Animais *</h2>
+    @if (Aplicacao.Id == 0 && Bovinos.Count > 0)
+    {
+        <div class="form-check mb-1">
+            <input class="form-check-input" type="checkbox" id="marcar-todos"
+                   checked="@(BovinosSelecionados.Count == Bovinos.Count)"
+                   @onchange="e => OnMarcarTodos.InvokeAsync((bool)e.Value!)" />
+            <label class="form-check-label fw-semibold" for="marcar-todos">Marcar todos</label>
+        </div>
+    }
     @foreach (var bovino in Bovinos)
     {
         <div class="form-check">
@@ -67,6 +76,7 @@
     [Parameter, EditorRequired] public Dictionary<int, decimal?> Doses { get; set; } = [];
     [Parameter] public string? MensagemErro { get; set; }
     [Parameter] public EventCallback OnSalvar { get; set; }
+    [Parameter] public EventCallback<bool> OnMarcarTodos { get; set; }
     [Parameter] public EventCallback<(int Id, bool Marcado)> OnSelecionarBovino { get; set; }
     [Parameter] public EventCallback<(int Id, bool Marcado)> OnSelecionarProduto { get; set; }
     [Parameter] public EventCallback<(int Id, string? Valor)> OnAlterarDose { get; set; }

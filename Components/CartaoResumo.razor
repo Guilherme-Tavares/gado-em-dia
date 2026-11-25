@@ -1,0 +1,31 @@
+<a href="@Link" class="text-decoration-none text-reset d-block h-100">
+    <div class="card cartao-resumo h-100 @(Destaque ? "cartao-resumo-alerta" : "")">
+        <div class="card-body d-flex align-items-center gap-3">
+            <div class="cartao-resumo-icone">
+                <i class="bi bi-@Icone" aria-hidden="true"></i>
+            </div>
+            <div>
+                <div class="cartao-resumo-valor">@Valor</div>
+                <div class="text-muted small">@Titulo</div>
+            </div>
+        </div>
+    </div>
+</a>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Titulo { get; set; } = "";
+
+    [Parameter, EditorRequired]
+    public int Valor { get; set; }
+
+    [Parameter, EditorRequired]
+    public string Icone { get; set; } = "";
+
+    [Parameter, EditorRequired]
+    public string Link { get; set; } = "";
+
+    // Quando verdadeiro, o cartão fica em vermelho (alerta).
+    [Parameter]
+    public bool Destaque { get; set; }
+}

@@ -42,3 +42,12 @@ public enum Funcao
     [Display(Name = "Veterinário")] Veterinario,
     Outro
 }
+
+// A ordem importa: nos reforços, quanto maior o valor, pior a situação.
+public enum StatusSanitario
+{
+    [Display(Name = "Em dia")] EmDia,
+    [Display(Name = "Vence em breve")] VenceEmBreve,
+    Atrasado,
+    [Display(Name = "Em carência")] EmCarencia
+}

@@ -46,45 +46,9 @@
     {
         <p class="text-muted">Carregando...</p>
     }
-    else if (!BovinosFiltrados.Any())
-    {
-        <AvisoVazio Mensagem="Nenhum bovino encontrado." />
-    }
     else
     {
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead>
-                    <tr>
-                        <th scope="col">Identificação</th>
-                        <th scope="col">Sexo</th>
-                        <th scope="col">Categoria</th>
-                        <th scope="col">Raça</th>
-                        <th scope="col">Situação</th>
-                        <th scope="col"><span class="visually-hidden">Ações</span></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var bovino in BovinosFiltrados)
-                    {
-                        <tr>
-                            <td class="fw-semibold">
-                                <a href="bovinos/@bovino.Id" class="text-reset text-decoration-none">@bovino.Identificacao</a>
-                            </td>
-                            <td>@bovino.Sexo?.ObterNome()</td>
-                            <td>@(bovino.Categoria?.ObterNome() ?? "—")</td>
-                            <td>@(bovino.Raca ?? "—")</td>
-                            <td><span class="badge rounded-pill @ClasseSituacao(bovino.Situacao)">@bovino.Situacao.ObterNome()</span></td>
-                            <td>
-                                <BotoesAcoes VisualizarUrl="@($"bovinos/{bovino.Id}")"
-                                             EditarUrl="@($"bovinos/editar/{bovino.Id}")"
-                                             OnExcluir="() => PedirExclusao(bovino)" />
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+        <TabelaBovinos Bovinos="BovinosFiltrados" Resumos="resumos" OnExcluir="PedirExclusao" />
     }
 </Cartao>
 
@@ -94,6 +58,7 @@
 
 @code {
     private List<Bovino>? bovinos;
+    private Dictionary<int, ResumoSanitario> resumos = new();
     private string busca = "";
     private string filtroSituacao = nameof(SituacaoBovino.Ativo);
     private Bovino? bovinoParaExcluir;
@@ -111,6 +76,16 @@
         bovinos = await db.Bovinos
             .OrderBy(b => b.Identificacao)
             .ToListAsync();
+
+        // Aplicações com os relacionados carregados, para a SituacaoSanitaria calcular os selos.
+        var aplicacoes = await db.Aplicacoes
+            .Include(a => a.Bovino)
+            .Include(a => a.Itens)
+                .ThenInclude(i => i.Produto)
+            .AsNoTracking()
+            .ToListAsync();
+
+        resumos = SituacaoSanitaria.Resumir(aplicacoes, DateTime.Today);
     }
 
     private void PedirExclusao(Bovino bovino)
@@ -148,11 +123,4 @@
         await db.SaveChangesAsync();
         bovinos?.Remove(bovino);
     }
-
-    private static string ClasseSituacao(SituacaoBovino situacao) => situacao switch
-    {
-        SituacaoBovino.Ativo => "text-bg-success",
-        SituacaoBovino.Vendido => "text-bg-secondary",
-        _ => "text-bg-dark"
-    };
 }

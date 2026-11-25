@@ -1,0 +1,28 @@
+<span class="badge rounded-pill @Classe">
+    <i class="bi bi-@Icone me-1" aria-hidden="true"></i>@(Texto ?? Situacao.ObterNome())
+</span>
+
+@code {
+    [Parameter, EditorRequired]
+    public StatusSanitario Situacao { get; set; }
+
+    // Texto opcional no lugar do nome padrão (ex.: "Em carência até 12/12/2026").
+    [Parameter]
+    public string? Texto { get; set; }
+
+    private string Classe => Situacao switch
+    {
+        StatusSanitario.EmDia => "text-bg-success",
+        StatusSanitario.VenceEmBreve => "text-bg-warning",
+        StatusSanitario.Atrasado => "text-bg-danger",
+        _ => "text-bg-info"
+    };
+
+    private string Icone => Situacao switch
+    {
+        StatusSanitario.EmDia => "check-circle",
+        StatusSanitario.VenceEmBreve => "clock",
+        StatusSanitario.Atrasado => "exclamation-triangle",
+        _ => "shield-lock"
+    };
+}

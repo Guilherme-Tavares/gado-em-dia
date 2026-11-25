@@ -71,6 +71,36 @@ else
             <dd class="col-sm-8 col-lg-9 mb-0">@(bovino.Observacoes ?? "Nenhuma")</dd>
         </dl>
     </Cartao>
+
+    <Cartao Titulo="Situação sanitária" Icone="shield-check">
+        @if (bovino.Situacao != SituacaoBovino.Ativo)
+        {
+            <AvisoVazio Mensagem="Os cálculos sanitários valem apenas para animais ativos." />
+        }
+        else
+        {
+            <dl class="row dados mb-3">
+                <dt class="col-sm-4 col-lg-3">Carência</dt>
+                <dd class="col-sm-8 col-lg-9">
+                    @if (fimCarencia is DateTime fim)
+                    {
+                        <SeloSituacao Situacao="StatusSanitario.EmCarencia" Texto="@($"Em carência até {fim:dd/MM/yyyy}")" />
+                    }
+                    else
+                    {
+                        <span class="text-success"><i class="bi bi-check-circle me-1" aria-hidden="true"></i>Liberado para abate</span>
+                    }
+                </dd>
+            </dl>
+
+            <h3 class="h6 fw-semibold">Reforços</h3>
+            <TabelaReforcos Reforcos="reforcos" MensagemVazio="Nenhum reforço programado para este animal." />
+        }
+    </Cartao>
+
+    <Cartao Titulo="Histórico de aplicações" Icone="clipboard2-check">
+        <TabelaAplicacoes Aplicacoes="aplicacoes" />
+    </Cartao>
 }
 
 @code {
@@ -79,12 +109,33 @@ else
 
     private Bovino? bovino;
     private bool naoEncontrado;
+    private List<Aplicacao> aplicacoes = [];
+    private List<Reforco> reforcos = [];
+    private DateTime? fimCarencia;
 
     protected override async Task OnParametersSetAsync()
     {
         await using var db = await DbFactory.CreateDbContextAsync();
         bovino = await db.Bovinos.AsNoTracking().FirstOrDefaultAsync(b => b.Id == Id);
         naoEncontrado = bovino is null;
+
+        if (naoEncontrado)
+        {
+            return;
+        }
+
+        aplicacoes = await db.Aplicacoes
+            .Include(a => a.Bovino)
+            .Include(a => a.Aplicador)
+            .Include(a => a.Itens)
+                .ThenInclude(i => i.Produto)
+            .Where(a => a.BovinoId == Id)
+            .OrderByDescending(a => a.Data)
+            .AsNoTracking()
+            .ToListAsync();
+
+        reforcos = SituacaoSanitaria.CalcularReforcos(aplicacoes, DateTime.Today);
+        fimCarencia = SituacaoSanitaria.FimCarencia(aplicacoes, DateTime.Today);
     }
 
     private static string Idade(DateTime nascimento)

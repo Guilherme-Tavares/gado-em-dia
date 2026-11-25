@@ -22,7 +22,7 @@ else
                         <td>@aplicacao.Data.ToString("dd/MM/yyyy")</td>
                         <td>@aplicacao.Bovino?.Identificacao</td>
                         <td>@aplicacao.Aplicador?.Nome</td>
-                        <td>@string.Join(", ", aplicacao.Itens.Select(i => i.Produto?.Nome))</td>
+                        <td>@string.Join(", ", aplicacao.Itens.Select(DescreverItem))</td>
                         <td>
                             <a class="btn btn-sm btn-outline-secondary"
                                href="aplicacoes/@aplicacao.Id"
@@ -57,4 +57,11 @@ else
 
     [Parameter]
     public EventCallback<Aplicacao> OnExcluir { get; set; }
+
+    // "Ivermectina 1% (5 mL)": nome do produto com a dose, quando informada.
+    private static string DescreverItem(AplicacaoProduto item)
+    {
+        string nome = item.Produto?.Nome ?? "Produto";
+        return item.Dose is decimal dose ? $"{nome} ({dose:0.##} {item.Produto?.Unidade})" : nome;
+    }
 }

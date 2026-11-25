@@ -33,6 +33,7 @@ else
                               Doses="doses"
                               MensagemErro="@erro"
                               OnSalvar="SalvarAsync"
+                              OnMarcarTodos="MarcarTodos"
                               OnSelecionarBovino="selecao => SelecionarBovino(selecao.Id, selecao.Marcado)"
                               OnSelecionarProduto="selecao => SelecionarProduto(selecao.Id, selecao.Marcado)"
                               OnAlterarDose="dose => AlterarDose(dose.Id, dose.Valor)" />
@@ -103,6 +104,24 @@ else
         else
         {
             bovinosSelecionados.Remove(id);
+        }
+
+        if (modelo is not null)
+        {
+            modelo.BovinoId = bovinosSelecionados.FirstOrDefault();
+        }
+    }
+
+    private void MarcarTodos(bool marcado)
+    {
+        bovinosSelecionados.Clear();
+
+        if (marcado)
+        {
+            foreach (Bovino bovino in bovinos)
+            {
+                bovinosSelecionados.Add(bovino.Id);
+            }
         }
 
         if (modelo is not null)

@@ -17,7 +17,7 @@ public class Aplicador
     [Required(ErrorMessage = "Selecione a função.")]
     public Funcao? Funcao { get; set; }
 
-    [StringLength(10)]
+    [StringLength(10, ErrorMessage = "O CRMV deve ter no máximo 10 caracteres.")]
     [RegularExpression(@"^\d{1,6}/[A-Z]{2}$", ErrorMessage = "Use o formato 1234/RO.")]
     public string? Crmv
     {

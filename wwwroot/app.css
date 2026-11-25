@@ -74,6 +74,56 @@ h1:focus {
     box-shadow: 0 1px 2px rgba(16, 40, 24, 0.06), 0 2px 8px rgba(16, 40, 24, 0.05);
 }
 
+.cartao-resumo {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+a:hover > .cartao-resumo {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(16, 40, 24, 0.08), 0 6px 16px rgba(16, 40, 24, 0.08);
+}
+
+.cartao-resumo-icone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.75rem;
+    background-color: var(--gd-verde-claro);
+    color: var(--gd-verde);
+    font-size: 1.4rem;
+}
+
+.cartao-resumo-valor {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.cartao-resumo-alerta {
+    border-left: 4px solid #c62828;
+}
+
+    .cartao-resumo-alerta .cartao-resumo-icone {
+        background-color: #fdeaea;
+        color: #c62828;
+    }
+
+    .cartao-resumo-alerta .cartao-resumo-valor {
+        color: #c62828;
+    }
+
+.progress {
+    height: 0.6rem;
+    background-color: var(--gd-verde-claro);
+}
+
+.progress-bar {
+    background-color: var(--gd-verde);
+}
+
 .table-responsive {
     position: relative;
 }

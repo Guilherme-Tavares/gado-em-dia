@@ -1,0 +1,40 @@
+@if (!Reforcos.Any())
+{
+    <AvisoVazio Mensagem="@MensagemVazio" />
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">Animal</th>
+                    <th scope="col">Produto</th>
+                    <th scope="col">Data prevista</th>
+                    <th scope="col">Situação</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var reforco in Reforcos.OrderBy(r => r.DataPrevista))
+                {
+                    <tr>
+                        <td class="fw-semibold">
+                            <a href="bovinos/@reforco.Bovino.Id" class="text-reset text-decoration-none">@reforco.Bovino.Identificacao</a>
+                        </td>
+                        <td>@reforco.Produto.Nome</td>
+                        <td>@reforco.DataPrevista.ToString("dd/MM/yyyy")</td>
+                        <td><SeloSituacao Situacao="reforco.Situacao" /></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public List<Reforco> Reforcos { get; set; } = [];
+
+    [Parameter]
+    public string MensagemVazio { get; set; } = "Nenhum reforço previsto.";
+}
